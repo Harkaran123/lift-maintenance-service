@@ -170,4 +170,55 @@ public class NotificationService {
         System.out.println("SMS to " + lift.getClientPhone() + ": " + message);
         System.out.println("NOTE: SMS integration requires provider (Twilio, AWS SNS, etc.). Please add credentials.");
     }
+
+    public int sendMaintenanceEmailToAllRecipients(Lift lift) {
+        String maintenanceDate = lift.getNextMaintenanceDate() != null 
+            ? lift.getNextMaintenanceDate().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+            : "soon";
+        
+        List<AlertRecipient> alertRecipients = alertRecipientService.getActiveRecipients();
+        int sentCount = 0;
+        
+        if (!alertRecipients.isEmpty()) {
+            for (AlertRecipient recipient : alertRecipients) {
+                if (recipient.getEmail() != null && !recipient.getEmail().trim().isEmpty()) {
+                    try {
+                        SimpleMailMessage alertMessage = new SimpleMailMessage();
+                        alertMessage.setFrom(fromEmail);
+                        alertMessage.setTo(recipient.getEmail().trim());
+                        alertMessage.setSubject("[MAINTENANCE] Lift Maintenance Due - " + lift.getName());
+                        alertMessage.setText(String.format(
+                            "MAINTENANCE NOTIFICATION\n\n" +
+                            "Lift: %s\n" +
+                            "Location: %s, %s\n" +
+                            "Client: %s\n" +
+                            "Client Phone: %s\n" +
+                            "Client Email: %s\n" +
+                            "Maintenance Due: %s\n" +
+                            "Maintenance Interval: %d months\n\n" +
+                            "Please ensure maintenance is scheduled immediately.\n\n" +
+                            "Lift Maintenance System",
+                            lift.getName(),
+                            lift.getBuilding(),
+                            lift.getArea(),
+                            lift.getClientName(),
+                            lift.getClientPhone(),
+                            lift.getClientEmail() != null ? lift.getClientEmail() : "N/A",
+                            maintenanceDate,
+                            lift.getMaintenanceInterval()
+                        ));
+                        mailSender.send(alertMessage);
+                        System.out.println("Maintenance email sent to: " + recipient.getName() + " <" + recipient.getEmail() + ">");
+                        sentCount++;
+                    } catch (Exception e) {
+                        System.err.println("Failed to send maintenance email to " + recipient.getEmail() + ": " + e.getMessage());
+                    }
+                }
+            }
+        } else {
+            System.out.println("No active alert recipients configured. Cannot send maintenance email.");
+        }
+        
+        return sentCount;
+    }
 }

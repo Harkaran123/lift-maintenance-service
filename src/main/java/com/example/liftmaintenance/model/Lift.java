@@ -21,11 +21,6 @@ public class Lift {
     private Integer maintenanceInterval; // months
     private LocalDate nextMaintenanceDate;
     
-    @ElementCollection
-    @CollectionTable(name = "lift_alert_emails", joinColumns = @JoinColumn(name = "lift_id"))
-    @Column(name = "email")
-    private List<String> alertEmails = new ArrayList<>();
-
     @OneToMany(mappedBy = "lift", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReminderSetting> reminderSettings = new ArrayList<>();
 
@@ -50,8 +45,6 @@ public class Lift {
     public void setClientPhone(String clientPhone) { this.clientPhone = clientPhone; }
     public String getClientEmail() { return clientEmail; }
     public void setClientEmail(String clientEmail) { this.clientEmail = clientEmail; }
-    public List<String> getAlertEmails() { return alertEmails; }
-    public void setAlertEmails(List<String> alertEmails) { this.alertEmails = alertEmails; }
     public Integer getMaintenanceInterval() { return maintenanceInterval; }
     public void setMaintenanceInterval(Integer maintenanceInterval) { this.maintenanceInterval = maintenanceInterval; }
     public LocalDate getNextMaintenanceDate() { return nextMaintenanceDate; }
