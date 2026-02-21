@@ -12,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/lifts")
@@ -33,6 +35,26 @@ public class LiftController {
         }
         notificationService.sendMaintenanceReminder(lift, 7);
         return ResponseEntity.ok("Test notification sent for lift: " + lift.getName());
+    }
+
+    @PostMapping("/{id}/send-maintenance-email")
+    @Operation(summary = "Send maintenance email for a lift", description = "Manually sends maintenance email to all alert recipients for this lift")
+    public ResponseEntity<Map<String, Object>> sendMaintenanceEmail(@PathVariable Long id) {
+        Lift lift = liftService.getLiftById(id);
+        if (lift == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        int sentCount = notificationService.sendMaintenanceEmailToAllRecipients(lift);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", sentCount > 0);
+        response.put("message", sentCount > 0 
+            ? "Maintenance email sent to " + sentCount + " alert recipient(s) for lift: " + lift.getName()
+            : "No active alert recipients found. Email not sent.");
+        response.put("recipientsNotified", sentCount);
+        
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
